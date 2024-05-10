@@ -1,4 +1,6 @@
-FROM python:bullseye
+FROM python:3.9-slim-buster
+
+RUN apt-get update && apt-get -y install python
 
 WORKDIR /app
 
