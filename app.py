@@ -8,21 +8,20 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-@app.before_first_request
-def create_tables():
-    db.create_all()
-
 class Todo(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100))
     complete = db.Column(db.Boolean)
 
+# Function to create database tables
+def create_tables():
+    with app.app_context():
+        db.create_all()
 
 @app.route("/")
 def home():
     todo_list = Todo.query.all()
     return render_template("base.html", todo_list=todo_list)
-
 
 @app.route("/add", methods=["POST"])
 def add():
@@ -32,22 +31,22 @@ def add():
     db.session.commit()
     return redirect(url_for("home"))
 
-
 @app.route("/update/<int:todo_id>")
 def update(todo_id):
-    todo = Todo.query.filter_by(id=todo_id).first()
-    todo.complete = not todo.complete
-    db.session.commit()
+    todo = Todo.query.get(todo_id)
+    if todo:
+        todo.complete = not todo.complete
+        db.session.commit()
     return redirect(url_for("home"))
-
 
 @app.route("/delete/<int:todo_id>")
 def delete(todo_id):
-    todo = Todo.query.filter_by(id=todo_id).first()
-    db.session.delete(todo)
-    db.session.commit()
-    return redirect(url_for("home"))
+    todo = Todo.query.get(todo_id)
+    if todo:
+        db.session.delete(todo)
+        db.session.commit()
+    return redirect(url_for("home")) 
 
 if __name__ == "__main__":
-    db.create_all()
-    app.run(debug=True,host="0.0.0.0")
+    create_tables()  # Create tables before running the app
+    app.run(debug=True, host="0.0.0.0")
